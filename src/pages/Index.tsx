@@ -1,8 +1,5 @@
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { useChatGPT } from "@/components/extensions/chatgpt-polza/useChatGPT";
-
-const CHATGPT_API_URL = "https://functions.poehali.dev/f781bfb9-73b0-4654-8b72-9610078434fe";
 
 const servers = [
   { id: 1, country: "Нидерланды", city: "Амстердам", flag: "🇳🇱", ping: 18, load: 32, protocol: "WireGuard" },
@@ -26,36 +23,6 @@ export default function Index() {
   const [dnsProtected, setDnsProtected] = useState(true);
   const [ipLeak, setIpLeak] = useState(false);
   const [killSwitch, setKillSwitch] = useState(true);
-
-  const [chatMessages, setChatMessages] = useState<{ id: string; role: "user" | "assistant"; content: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const { generate, isLoading: chatLoading } = useChatGPT({ apiUrl: CHATGPT_API_URL });
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  const handleChatSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const text = chatInput.trim();
-    if (!text || chatLoading) return;
-    const userMsg = { id: crypto.randomUUID(), role: "user" as const, content: text };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput("");
-    const result = await generate({
-      messages: [
-        { role: "system", content: "Ты помощник по вопросам VPN, конфиденциальности и кибербезопасности. Отвечай кратко и по делу на русском языке." },
-        ...chatMessages.map((m) => ({ role: m.role, content: m.content })),
-        { role: "user", content: text },
-      ],
-      model: "openai/gpt-4o-mini",
-    });
-    setChatMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "assistant", content: result.success ? result.content! : `Ошибка: ${result.error}` },
-    ]);
-  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -403,69 +370,6 @@ export default function Index() {
                   ПРОВЕРИТЬ УТЕЧКИ
                 </div>
               </button>
-
-              {/* AI Ассистент */}
-              <div className="glass rounded-2xl overflow-hidden animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
-                <div className="flex items-center gap-2 px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(30,45,71,0.8)" }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #00f5ff, #00ff88)" }}>
-                    <Icon name="Bot" size={14} className="text-vpn-dark" />
-                  </div>
-                  <span className="font-oswald text-sm font-bold tracking-wider text-white">AI АССИСТЕНТ</span>
-                  {chatMessages.length > 0 && (
-                    <button onClick={() => setChatMessages([])} className="ml-auto text-xs text-vpn-muted hover:text-white transition-colors">
-                      очистить
-                    </button>
-                  )}
-                </div>
-
-                <div className="h-48 overflow-y-auto p-4 space-y-3">
-                  {chatMessages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center">
-                      <p className="text-xs text-vpn-muted text-center">Спроси про VPN, анонимность<br />или настройки безопасности</p>
-                    </div>
-                  ) : (
-                    chatMessages.map((msg) => (
-                      <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div
-                          className="max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed"
-                          style={msg.role === "user"
-                            ? { background: "linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,255,136,0.2))", border: "1px solid rgba(0,245,255,0.3)", color: "#fff" }
-                            : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(30,45,71,0.8)", color: "#a0aec0" }
-                          }
-                        >
-                          {msg.content}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  {chatLoading && (
-                    <div className="flex justify-start">
-                      <div className="px-3 py-2 rounded-xl text-xs" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(30,45,71,0.8)", color: "#a0aec0" }}>
-                        <span className="animate-pulse">●●●</span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-
-                <form onSubmit={handleChatSubmit} className="flex gap-2 p-3" style={{ borderTop: "1px solid rgba(30,45,71,0.8)" }}>
-                  <input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Задай вопрос..."
-                    disabled={chatLoading}
-                    className="flex-1 bg-transparent text-xs text-white placeholder-vpn-muted outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={chatLoading || !chatInput.trim()}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg, #00f5ff, #00ff88)" }}
-                  >
-                    <Icon name="Send" size={12} className="text-vpn-dark" />
-                  </button>
-                </form>
-              </div>
             </div>
           )}
         </main>
